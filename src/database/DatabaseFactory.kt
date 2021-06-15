@@ -19,8 +19,8 @@ object DatabaseFactory {
 
     private fun hikari(): HikariDataSource {
         val config = HikariConfig()
-        config.driverClassName = System.getenv("JDBC_DRIVER") // 1
-        config.jdbcUrl = System.getenv("JDBC_DATABASE_URL") // 2
+        config.driverClassName = System.getenv("JDBC_DRIVER")
+        config.jdbcUrl = System.getenv("JDBC_DATABASE_URL")
         config.maximumPoolSize = 3
         config.isAutoCommit = false
         config.transactionIsolation = "TRANSACTION_REPEATABLE_READ"
@@ -28,7 +28,7 @@ object DatabaseFactory {
         if (user != null) {
             config.username = user
         }
-        val password = "postgres"//System.getenv("DB_PASSWORD") // 4
+        val password = System.getenv("DB_PASSWORD")
         if (password != null) {
             config.password = password
         }
