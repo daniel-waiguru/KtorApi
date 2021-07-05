@@ -86,7 +86,7 @@ fun Route.tasks(taskRepo: TaskRepo, userRepo: UserRepo) {
                     val taskId = call.parameters["id"] ?: return@put call.respond(
                         HttpStatusCode.BadRequest, "Unknown task id"
                     )
-                    application.log.info(taskId.toString())
+                    application.log.info(taskId)
                     val updatedTaskId = taskRepo.updateTask(
                         user.uid,
                         taskId.toInt(),
@@ -108,37 +108,43 @@ fun Route.tasks(taskRepo: TaskRepo, userRepo: UserRepo) {
                     call.respond(HttpStatusCode.BadRequest, "Task update failed")
                 }
             }
-        }
-        delete("/{id}") {
-            val user = call.sessions.get<UserSession>()?.let {
-                userRepo.getUser(it.uid)
-            }
-            application.log.info(user.toString())
-            call.application.environment.log.info(user.toString())
-            call.application.environment.log.debug(user.toString())
-            if (user == null) {
-                call.respond(
-                    HttpStatusCode.Unauthorized, "Un authorized user"
-                )
-                return@delete
-            }
-            try {
-                val id = call.parameters["id"] ?: return@delete call.respond(
-                    HttpStatusCode.BadRequest, "Unknown task id"
-                )
-                application.log.info(id)
-                val deletedTask = taskRepo.deleteTask(user.uid, id.toInt())
-                call.respond(
-                    HttpStatusCode.OK, "Task id $deletedTask deleted"
-                )
-            } catch (e: Throwable) {
-                application.log.error("Failed to delete")
-                call.respond(
-                    HttpStatusCode.BadRequest, "Failed to delete a task"
-                )
-            }
-        }
+            delete("/{id}") {
+                val user = call.sessions.get<UserSession>()?.let {
+                    userRepo.getUser(it.uid)
+                }
+                application.log.info(user.toString())
+                call.application.environment.log.info(user.toString())
+                call.application.environment.log.debug(user.toString())
+                if (user == null) {
+                    call.respond(
+                        HttpStatusCode.Unauthorized, "Un authorized user"
+                    )
+                    return@delete
+                }
+                try {
+                    val id = call.parameters["id"] ?: return@delete call.respond(
+                        HttpStatusCode.BadRequest, "Unknown task id"
+                    )
+                    application.log.info(id)
+                    val deletedTask = taskRepo.deleteTask(user.uid, id.toInt())
+                    if (deletedTask < 1) {
+                        call.respond(
+                            HttpStatusCode.BadRequest, "Task deletion failed!"
+                        )
+                    } else {
+                        call.respond(
+                            HttpStatusCode.OK, "Task id $id deleted"
+                        )
+                    }
 
+                } catch (e: Throwable) {
+                    application.log.error("Failed to delete", e)
+                    call.respond(
+                        HttpStatusCode.BadRequest, "Failed to delete a task"
+                    )
+                }
+            }
+        }
     }
 }
 fun Application.registerTaskRoutes(userRepo: UserRepo, taskRepo: TaskRepo) {
