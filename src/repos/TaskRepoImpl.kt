@@ -3,7 +3,9 @@ package dev.hashnode.danielwaiguru.repos
 import dev.hashnode.danielwaiguru.database.DatabaseFactory.dbQuery
 import dev.hashnode.danielwaiguru.database.Tasks
 import dev.hashnode.danielwaiguru.models.Task
+import dev.hashnode.danielwaiguru.models.TaskDomain
 import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.statements.InsertStatement
 
 class TaskRepoImpl: TaskRepo {
@@ -26,6 +28,14 @@ class TaskRepoImpl: TaskRepo {
 
     override suspend fun deleteTask(userId: Int, taskId: Int): Int = dbQuery {
         Tasks.deleteWhere { (Tasks.uid.eq(userId)) and (Tasks.taskId.eq(taskId)) }
+    }
+
+    override suspend fun updateTask(userId: Int, taskId: Int, task: TaskDomain): Int = dbQuery {
+        Tasks.update({ Tasks.uid.eq(userId) and Tasks.taskId.eq(taskId) }) {
+            it[title] = task.title
+            it[description] = task.description
+            it[done] = task.done
+        }
     }
 
     private fun rowToTask(row: ResultRow?): Task? {

@@ -1,6 +1,7 @@
 package dev.hashnode.danielwaiguru.routes
 
 import dev.hashnode.danielwaiguru.auth.UserSession
+import dev.hashnode.danielwaiguru.models.TaskDomain
 import dev.hashnode.danielwaiguru.repos.TaskRepo
 import dev.hashnode.danielwaiguru.repos.UserRepo
 import io.ktor.application.*
@@ -65,6 +66,48 @@ fun Route.tasks(taskRepo: TaskRepo, userRepo: UserRepo) {
                     )
                 }
             }
+            put("/{id}") {
+                val taskParams = call.receive<Parameters>()
+                val title = taskParams["title"] ?: return@put call.respond(
+                    HttpStatusCode.BadRequest, "Title field is required")
+                val desc = taskParams["description"] ?: ""
+                val done = taskParams["done"] ?: "false"
+                val task = TaskDomain(title, desc, done.toBoolean())
+                val user = call.sessions.get<UserSession>()?.let {
+                    userRepo.getUser(it.uid)
+                }
+                if (user == null) {
+                    call.respond(HttpStatusCode.BadRequest, "Un authorized user")
+                    return@put
+                }
+                try {
+                    application.log.info(user.toString())
+
+                    val taskId = call.parameters["id"] ?: return@put call.respond(
+                        HttpStatusCode.BadRequest, "Unknown task id"
+                    )
+                    application.log.info(taskId.toString())
+                    val updatedTaskId = taskRepo.updateTask(
+                        user.uid,
+                        taskId.toInt(),
+                        task)
+                    if (updatedTaskId < 1) {
+                        call.respond(
+                            status = HttpStatusCode.BadRequest,
+                            message = "Update not successful"
+                        )
+                    } else {
+                        call.respond(
+                            status = HttpStatusCode.OK,
+                            message = "Update successful"
+                        )
+                    }
+
+                } catch (e: Exception) {
+                    application.log.error("Failed to update a task", e)
+                    call.respond(HttpStatusCode.BadRequest, "Task update failed")
+                }
+            }
         }
         delete("/{id}") {
             val user = call.sessions.get<UserSession>()?.let {
@@ -95,6 +138,7 @@ fun Route.tasks(taskRepo: TaskRepo, userRepo: UserRepo) {
                 )
             }
         }
+
     }
 }
 fun Application.registerTaskRoutes(userRepo: UserRepo, taskRepo: TaskRepo) {
