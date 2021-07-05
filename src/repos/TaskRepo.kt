@@ -5,4 +5,5 @@ import dev.hashnode.danielwaiguru.models.Task
 interface TaskRepo {
     suspend fun storeTask(uid: Int, title: String, description: String, done: Boolean): Task?
     suspend fun getTasks(uid: Int): List<Task>
+    suspend fun deleteTask(userId: Int, taskId: Int): Int
 }
