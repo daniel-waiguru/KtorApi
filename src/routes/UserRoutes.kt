@@ -9,6 +9,8 @@ import io.ktor.request.*
 import io.ktor.response.*
 import io.ktor.routing.*
 import io.ktor.sessions.*
+import org.apache.commons.mail.DefaultAuthenticator
+import org.apache.commons.mail.SimpleEmail
 
 fun Route.users(db: UserRepo, jwtService: JwtService, hashFunction: (String) -> String) {
     route("/$API_VERSION/user") {
@@ -26,6 +28,17 @@ fun Route.users(db: UserRepo, jwtService: JwtService, hashFunction: (String) -> 
             val hash = hashFunction(password)
             try {
                 val newUser = db.storeUser(displayName, email, hash)
+                /*SimpleEmail().apply {
+                    hostName = "smtp.googlemail.com"
+                    setSmtpPort(587)
+                    setAuthenticator(DefaultAuthenticator("danielirungu002@gmail.com", "acekeed254"))
+                    isSSLOnConnect = true
+                    setFrom("admin@gmail.com")
+                    subject = "Test"
+                    setMsg("Hello")
+                    addTo(email)
+                    send()
+                }*/
                 newUser?.uid?.let {
                     call.sessions.set(UserSession(it))
                     call.respondText(
